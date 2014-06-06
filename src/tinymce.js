@@ -45,13 +45,17 @@ angular.module('ui.tinymce', [])
             });
             // Update model on button click
             ed.on('ExecCommand', function (e) {
-              ed.save();
-              updateView();
+              if (!e.initial && (ngModel.$viewValue || '') !== (ed.getContent() || '')) {
+                ed.save();
+                updateView();
+              }
             });
             // Update model on keypress
             ed.on('KeyUp', function (e) {
-              ed.save();
-              updateView();
+              if (!e.initial && (ngModel.$viewValue || '') !== (ed.getContent() || '')) {
+                ed.save();
+                updateView();
+              }
             });
             // Update model on change, i.e. copy/pasted text, plugins altering content
             ed.on('SetContent', function (e) {
@@ -65,8 +69,10 @@ angular.module('ui.tinymce', [])
             });
             // Update model when an object has been resized (table, image)
             ed.on('ObjectResized', function (e) {
-              ed.save();
-              updateView();
+              if (!e.initial && (ngModel.$viewValue || '') !== (ed.getContent() || '')) {
+                ed.save();
+                updateView();
+              }
             });
             if (configSetup) {
               configSetup(ed);
