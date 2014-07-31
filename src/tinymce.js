@@ -10,9 +10,19 @@ angular.module('ui.tinymce', [])
       priority: 10,
       require: 'ngModel',
       link: function (scope, elm, attrs, ngModel) {
+        var getPlaceholderText = function() {
+          return expression.placeholder ? "<span class='ui-tinymce-placeholder'>"+expression.placeholder+"</span>" : '';
+        };
+        //whether the placeholder is displayed
+        var isPlaceholderVisible = false;
+        //used to ignore setContent event and therefore not set the ngmodel value
+        var ignoreSetContent = false;
+        //whether the field has focus
+        var focused = false;
+
         var expression, options, tinyInstance,
           updateView = function () {
-            ngModel.$setViewValue(elm.val());
+            ngModel.$setViewValue(isPlaceholderVisible ? '' : elm.val());
             if (!scope.$root.$$phase) {
               scope.$apply();
             }
@@ -39,37 +49,83 @@ angular.module('ui.tinymce', [])
           // Update model when calling setContent (such as from the source editor popup)
           setup: function (ed) {
             var args;
+            var setPlaceHolder = function(force) {
+                if (!force && (isPlaceholderVisible || !expression.placeholder)) {
+                    return ;
+                }
+                ignoreSetContent = true;
+                ed.setContent(getPlaceholderText());
+                ignoreSetContent = false;
+                isPlaceholderVisible = true;
+            };
+            var clearPlaceHolder = function() {
+                if (!isPlaceholderVisible) {
+                    return ;
+                }
+                ignoreSetContent = true;
+                ed.setContent('');
+                ignoreSetContent = false;
+                isPlaceholderVisible = false;
+            };
+            var getContent = function() {
+                return isPlaceholderVisible ? '' : ed.getContent();
+            };
+
             ed.on('init', function(args) {
               ngModel.$render();
               ngModel.$setPristine();
+
+              // If content is empty and we have a placeholder set the placeholder
+              if (!focused && !getContent().length) {
+                setPlaceHolder();
+              }
             });
             // Update model on button click
             ed.on('ExecCommand', function (e) {
-              if (!e.initial && (ngModel.$viewValue || '') !== (ed.getContent() || '')) {
+              if (!e.initial && (ngModel.$viewValue || '') !== (getContent() || '')) {
                 ed.save();
                 updateView();
               }
             });
             // Update model on keypress
             ed.on('KeyUp', function (e) {
-              if (!e.initial && (ngModel.$viewValue || '') !== (ed.getContent() || '')) {
+              if (!e.initial && (ngModel.$viewValue || '') !== (getContent() || '')) {
                 ed.save();
                 updateView();
               }
             });
             // Update model on change, i.e. copy/pasted text, plugins altering content
             ed.on('SetContent', function (e) {
-              if (!e.initial && (ngModel.$viewValue || '') !== (ed.getContent() || '')) {
-                ed.save();
-                updateView();
+              if (!ignoreSetContent) {
+                //if the field is not focused, and the content is empty, set the placeholder
+                if (!isPlaceholderVisible && !focused && !getContent().length) {
+                  setPlaceHolder();
+                }
+
+                if (!e.initial && (ngModel.$viewValue || '') !== (getContent() || '')) {
+                  ed.save();
+                  updateView();
+                }
               }
             });
+            ed.on('focus', function() {
+              // replace the default content on focus if the same as original placeholder
+              if (isPlaceholderVisible) {
+                clearPlaceHolder();
+              }
+              focused = true;
+            });
             ed.on('blur', function(e) {
-                elm.blur();
+              if (!getContent().length) {
+                setPlaceHolder();
+              }
+              focused = false;
+
+              elm.blur();
             });
             // Update model when an object has been resized (table, image)
             ed.on('ObjectResized', function (e) {
-              if (!e.initial && (ngModel.$viewValue || '') !== (ed.getContent() || '')) {
+              if (!e.initial && (ngModel.$viewValue || '') !== (getContent() || '')) {
                 ed.save();
                 updateView();
               }
@@ -77,6 +133,18 @@ angular.module('ui.tinymce', [])
             if (configSetup) {
               configSetup(ed);
             }
+
+            scope.$watch(function() {
+              return expression.placeholder;
+            }, function() {
+              if (isPlaceholderVisible) {
+                if (expression.placeholder) {
+                  setPlaceHolder(true);
+                } else {
+                  clearPlaceHolder();
+                }
+              }
+            });
           },
           mode: 'exact',
           elements: attrs.id
@@ -92,7 +160,15 @@ angular.module('ui.tinymce', [])
             tinyInstance = tinymce.get(attrs.id);
           }
           if (tinyInstance) {
-            tinyInstance.setContent(ngModel.$viewValue || '');
+            ignoreSetContent = true;
+            if (!ngModel.$viewValue) {
+              tinyInstance.setContent(getPlaceholderText());
+              isPlaceholderVisible = true;
+            } else {
+              tinyInstance.setContent(ngModel.$viewValue);
+              isPlaceholderVisible = false;
+            }
+            ignoreSetContent = false;
           }
         };
 
