@@ -75,6 +75,14 @@ myAppModule.controller('MyController', function($scope) {
 </form>
 ```    
 
+### placeholder
+
+Additional option that will set a placeholder in the field when the field is empty.
+
+The CSS class "ui-tinymce-placeholder" can then be used to style the placeholder.
+
+Any change in the value will be reflected in the field.
+
 ## Working with ng-model
 
 The ui-tinymce directive plays nicely with the ng-model directive such as ng-required.
