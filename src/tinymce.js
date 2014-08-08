@@ -53,19 +53,19 @@ angular.module('ui.tinymce', [])
                 if (!force && (isPlaceholderVisible || !expression.placeholder)) {
                     return ;
                 }
+                isPlaceholderVisible = true;
                 ignoreSetContent = true;
                 ed.setContent(getPlaceholderText());
                 ignoreSetContent = false;
-                isPlaceholderVisible = true;
             };
             var clearPlaceHolder = function() {
                 if (!isPlaceholderVisible) {
                     return ;
                 }
+                isPlaceholderVisible = false;
                 ignoreSetContent = true;
                 ed.setContent('');
                 ignoreSetContent = false;
-                isPlaceholderVisible = false;
             };
             var getContent = function() {
                 return isPlaceholderVisible ? '' : ed.getContent();
