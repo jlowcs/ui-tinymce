@@ -82,7 +82,7 @@ angular.module('ui.tinymce', [])
             });
             // Update model on button click
             ed.on('ExecCommand', function (e) {
-              if (!e.initial && (ngModel.$viewValue || '') !== (getContent() || '')) {
+              if (!e.initial && (e.command !== "mceRepaint") && (ngModel.$viewValue || '') !== (getContent() || '')) {
                 ed.save();
                 updateView();
               }
