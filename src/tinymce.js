@@ -172,7 +172,7 @@ angular.module('ui.tinymce', [])
           }
         };
 
-        scope.$on('$destroy', function() {
+        elm.on('$destroy', function() {
           if (!tinyInstance) { tinyInstance = tinymce.get(attrs.id); }
           if (tinyInstance) {
             tinyInstance.remove();
